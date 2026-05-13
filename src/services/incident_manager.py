@@ -2,12 +2,19 @@ from src.ai.incident_classifier import IncidentClassifier
 from src.events.event_manager import EventManager
 from src.models.event_args import IncidentEventArgs
 from src.models.incident import Incident
+from src.services.database_service import DatabaseService
 
 
 class IncidentManager:
-    def __init__(self, classifier: IncidentClassifier, event_manager: EventManager) -> None:
+    def __init__(
+        self,
+        classifier: IncidentClassifier,
+        event_manager: EventManager,
+        database_service: DatabaseService | None = None,
+    ) -> None:
         self.classifier = classifier
         self.event_manager = event_manager
+        self.database_service = database_service
         self.incidents: list[Incident] = []
         self._next_id = 1
 
@@ -32,6 +39,9 @@ class IncidentManager:
         predicted_priority = self.classifier.predict_priority(incident)
         old_priority = incident.change_priority(predicted_priority)
         self.incidents.append(incident)
+        if self.database_service is not None:
+            self.database_service.save_incident(incident)
+            self.database_service.add_history(incident.incident_id, "created")
 
         self.event_manager.notify(
             "on_incident_created",
@@ -43,6 +53,13 @@ class IncidentManager:
         )
 
         if old_priority != predicted_priority:
+            if self.database_service is not None:
+                self.database_service.add_history(
+                    incident.incident_id,
+                    "priority_changed",
+                    old_priority,
+                    predicted_priority,
+                )
             self.event_manager.notify(
                 "on_priority_changed",
                 IncidentEventArgs(

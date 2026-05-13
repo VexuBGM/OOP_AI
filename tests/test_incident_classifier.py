@@ -41,6 +41,18 @@ class IncidentClassifierTests(unittest.TestCase):
 
         self.assertEqual(self.classifier.predict_priority(incident), "medium")
 
+    def test_matches_most_sample_priorities(self) -> None:
+        from src.services.file_service import FileService
+
+        incidents = FileService().load_incidents_from_csv("data/sample_incidents.csv")
+        matches = [
+            incident
+            for incident in incidents
+            if self.classifier.predict_priority(incident) == incident.priority
+        ]
+
+        self.assertGreaterEqual(len(matches), 27)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,8 +2,26 @@ from src.models.incident import Incident
 
 
 class IncidentClassifier:
-    high_keywords = ("outage", "breach", "data loss", "down", "malware")
-    medium_keywords = ("slow", "error", "failed", "timeout", "locked")
+    high_keywords = (
+        "outage",
+        "breach",
+        "data loss",
+        "down",
+        "malware",
+        "administrator",
+        "certificate",
+    )
+    medium_keywords = (
+        "slow",
+        "error",
+        "failed",
+        "fails",
+        "timeout",
+        "locked",
+        "permission",
+        "suspicious",
+        "unavailable",
+    )
     risky_categories = ("security", "database", "network")
 
     def predict_priority(self, incident: Incident) -> str:
@@ -20,15 +38,19 @@ class IncidentClassifier:
         score = 0
 
         if incident.affected_users >= 50:
+            score += 5
+        elif incident.affected_users >= 30:
             score += 3
         elif incident.affected_users >= 10:
+            score += 2
+        elif incident.affected_users >= 5:
             score += 2
 
         if incident.category in self.risky_categories:
             score += 2
 
         if any(keyword in text for keyword in self.high_keywords):
-            score += 3
+            score += 4
 
         if any(keyword in text for keyword in self.medium_keywords):
             score += 1
