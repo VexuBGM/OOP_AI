@@ -1,6 +1,7 @@
 import unittest
 
 from src.ai.incident_classifier import IncidentClassifier
+from src.exceptions import ClassificationError
 from src.models.incident import Incident
 
 
@@ -52,6 +53,18 @@ class IncidentClassifierTests(unittest.TestCase):
         ]
 
         self.assertGreaterEqual(len(matches), 27)
+
+    def test_raises_custom_error_for_invalid_incident_data(self) -> None:
+        incident = Incident(
+            title="",
+            description="Invalid incident",
+            category="hardware",
+            affected_users=-1,
+            reported_by="Tester",
+        )
+
+        with self.assertRaises(ClassificationError):
+            self.classifier.predict_priority(incident)
 
 
 if __name__ == "__main__":

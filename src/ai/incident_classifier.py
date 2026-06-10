@@ -1,4 +1,5 @@
 from src.models.incident import Incident
+from src.exceptions import ClassificationError
 
 
 class IncidentClassifier:
@@ -25,13 +26,38 @@ class IncidentClassifier:
     risky_categories = ("security", "database", "network")
 
     def predict_priority(self, incident: Incident) -> str:
-        score = self._calculate_score(incident)
+        try:
+            self._validate_incident(incident)
+            score = self._calculate_score(incident)
+        except ClassificationError:
+            raise
+        except (AttributeError, TypeError, ValueError) as error:
+            raise ClassificationError(f"Cannot classify incident: {error}") from error
 
         if score >= 6:
             return "high"
         if score >= 3:
             return "medium"
         return "low"
+
+    def _validate_incident(self, incident: Incident) -> None:
+        text_fields = {
+            "title": incident.title,
+            "description": incident.description,
+            "category": incident.category,
+            "reported_by": incident.reported_by,
+        }
+        missing_fields = [
+            name
+            for name, value in text_fields.items()
+            if not isinstance(value, str) or not value.strip()
+        ]
+        if missing_fields:
+            raise ClassificationError(
+                f"Missing incident fields: {', '.join(missing_fields)}."
+            )
+        if not isinstance(incident.affected_users, int) or incident.affected_users < 0:
+            raise ClassificationError("Affected users must be a non-negative integer.")
 
     def _calculate_score(self, incident: Incident) -> int:
         text = f"{incident.title} {incident.description}".lower()
