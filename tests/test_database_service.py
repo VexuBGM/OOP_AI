@@ -45,6 +45,25 @@ class DatabaseServiceTests(unittest.TestCase):
             self.assertEqual(history[0]["old_value"], "low")
             self.assertEqual(history[0]["new_value"], "high")
 
+    def test_clears_demo_database_tables(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            database = DatabaseService(Path(temp_dir) / "test.db")
+            incident = Incident(
+                title="Database outage",
+                description="Main customer database is down.",
+                category="database",
+                affected_users=74,
+                reported_by="Maria Georgieva",
+                priority="high",
+            )
+
+            incident_id = database.save_incident(incident)
+            database.add_history(incident_id, "created")
+            database.clear_all()
+
+            self.assertEqual(database.list_incidents(), [])
+            self.assertEqual(database.list_history(), [])
+
 
 if __name__ == "__main__":
     unittest.main()

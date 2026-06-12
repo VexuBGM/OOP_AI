@@ -128,6 +128,15 @@ class DatabaseService:
         except sqlite3.Error as error:
             raise DatabaseOperationError(f"Cannot delete incident: {error}") from error
 
+    def clear_all(self) -> None:
+        try:
+            with self._connect() as connection:
+                connection.execute("DELETE FROM history")
+                connection.execute("DELETE FROM technicians")
+                connection.execute("DELETE FROM incidents")
+        except sqlite3.Error as error:
+            raise DatabaseOperationError(f"Cannot clear database: {error}") from error
+
     def save_technician(self, technician: Technician) -> int:
         try:
             with self._connect() as connection:

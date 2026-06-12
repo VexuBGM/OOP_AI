@@ -29,6 +29,8 @@ def build_app(use_database: bool = False) -> IncidentManager:
 
 def run_final_demo() -> None:
     manager = build_app(use_database=True)
+    if manager.database_service is not None:
+        manager.database_service.clear_all()
 
     print("=== Final demo: AI incident management system ===")
 
